@@ -1,0 +1,114 @@
+#include <Adafruit_ST7789.h> 
+#include <SPI.h>
+#include <MD_TCS230.h>   //necessary libraries for color sensor and display
+#include <FreqCount.h>
+#include <Adafruit_ST7735.h>
+#include <Adafruit_GFX.h>
+
+
+#if defined(ARDUINO_FEATHER_ESP32) // Feather Huzzah32
+  #define TFT_CS         14
+  #define TFT_RST        15
+  #define TFT_DC         32
+
+#elif defined(ESP8266)
+  #define TFT_CS         4
+  #define TFT_RST        16                                            
+  #define TFT_DC         5
+
+#else  // For the breakout board, you can use any 2 or 3 pins. 
+       // These pins will also work for the 1.8" TFT shield.
+  #define TFT_CS        10
+  #define TFT_RST        9 // Or set to -1 and connect to Arduino RESET pin
+  #define TFT_DC         8
+#endif
+
+#define BLACK    0x0000
+#define BLUE     0x001F
+#define RED      0xF800   //basic colors
+#define GREEN    0x07E0
+#define CYAN     0x07FF
+#define MAGENTA  0xF81F
+#define YELLOW   0xFFE0 
+#define WHITE    0xFFFF
+
+Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_RST);
+//initializing the color display
+
+#include <Wire.h>
+int ov; //output value of the sensor
+int lw=440;
+int hw=1012; //maximum and minimum values
+void setup() 
+{
+   Serial.begin(57600);
+   tft.initR(INITR_BLACKTAB);  
+   drawBlackScreen();
+
+  tft.setCursor(20,30);
+  tft.setTextColor(GREEN);
+  tft.setTextSize(1);
+  tft.print("Soil");
+
+  tft.setCursor(20,50);
+  tft.setTextSize(1);
+  tft.print("Humidity");
+
+  tft.setCursor(20,70);
+  tft.setTextSize(1);
+  tft.print("Sensor");
+
+   tft.setCursor(20,90);
+  tft.setTextColor(CYAN);
+  tft.setTextSize(1);
+  tft.print("By Geza");
+
+  delay(3000);
+ 
+}
+
+void loop()
+{
+     ov= analogRead(A0);
+    ov = map(ov,hw,lw,0,100);  /*the sensor sends a value between 1024(when minimum humidity) and apr. 445(when max humidity). 
+                                   This range should be transformed in procent between 0 and 100% by map function */
+    if(ov>100)
+   ov=100;
+    else if(ov<0)
+    ov=0;
+   
+   drawBlackScreen();
+ 
+    tft.setTextSize(1);
+     tft.setTextColor(GREEN);
+    if(ov<40)
+    {
+       tft.setTextColor(RED);
+        tft.setCursor(40,115);
+        tft.print("Your plant ");
+        tft.setCursor(10,125);
+        tft.print("needs more water");
+    }
+    else
+    if(ov<60)
+    {
+       tft.setTextColor(YELLOW);
+    }
+     tft.setCursor(20,30);
+    tft.print("Soil ");
+     tft.setCursor(20,50);
+     tft.print("humidity: ");
+       tft.setTextSize(3);
+    tft.setCursor(35,75);
+    tft.print(ov);
+    tft.print(" %");
+    delay(1000); 
+    
+}
+
+void drawBlackScreen()
+{
+  tft.fillScreen(BLACK);
+  tft.drawRect(0,0,127,159,WHITE);  // white frame
+  tft.drawRect(1,1,127,159,WHITE);
+}
